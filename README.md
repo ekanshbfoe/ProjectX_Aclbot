@@ -1,3 +1,9 @@
+<!--
+# Copyright (c) 2026 ACL community
+# Licensed under the MIT License.
+# This file is part of ProjectX_Aclbot
+-->
+
 # Project X - Telegram Security & Membership Bot
 
 A premium, high-performance Telegram bot built with `aiogram 3.x` to manage group security and mandatory channel memberships.
@@ -31,7 +37,7 @@ A premium, high-performance Telegram bot built with `aiogram 3.x` to manage grou
 
 2. **Install dependencies**:
    ```bash
-   pip install -r requirement.txt
+   pip install -r requirements.txt
    ```
 
 3. **Configure Environment Variables**:
@@ -53,9 +59,9 @@ A premium, high-performance Telegram bot built with `aiogram 3.x` to manage grou
 - `main.py`: Entry point, dispatcher setup, and core message routing.
 - `services/`:
   - `links/membership.py`: Logic for checking hub membership and sending reminders.
-  - `securitys/filters.py`: Regex-based filtering for links, forwards, and whitelist management.
+  - `security/filters.py`: Regex-based filtering for links, forwards, and whitelist management.
 - `.env`: Secret configuration (Token, Chat IDs, Sudo users).
-- `requirement.txt`: Python package dependencies.
+- `requirements.txt`: Python package dependencies.
 
 ## 🤖 Bot Commands
 

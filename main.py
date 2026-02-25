@@ -9,7 +9,11 @@ from aiogram.filters import Command
 
 # Import logic from services
 from services.links.membership import send_membership_reminder, handle_join_request, is_user_in_chat
-from services.securitys.filters import detect_and_delete_ad, send_security_warning, add_to_whitelist, is_admin
+from services.security.filters import detect_and_delete_ad, send_security_warning, add_to_whitelist, is_admin
+from keep_alive import keep_alive
+
+# Start Keep Alive
+keep_alive()
 
 # Load environment variables
 load_dotenv()

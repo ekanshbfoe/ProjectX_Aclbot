@@ -1,0 +1,8 @@
+# Copyright (c) 2026 ACL community
+# Licensed under the MIT License.
+# This file is part of ProjectX_Aclbot
+
+aiogram>=3.0.0
+python-dotenv
+cachetools
+Flask
