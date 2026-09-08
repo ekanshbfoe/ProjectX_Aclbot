@@ -9,7 +9,7 @@ from aiogram.filters import Command
 
 # Import logic from services
 from services.links.membership import send_membership_reminder, handle_join_request, is_user_in_chat
-from services.security.filters import detect_and_delete_ad, send_security_warning, add_to_whitelist, is_admin
+from services.security.filters import detect_and_delete_ad, send_security_warning, add_to_whitelist, is_admin, whitelisted_users
 from services.requests.handler import handle_request_command, handle_status_callback, handle_admin_action, init_supabase
 from keep_alive import keep_alive
 
@@ -57,12 +57,27 @@ async def on_admin_action_callback(callback_query: CallbackQuery):
 @dp.message(F.chat.type.in_({"group", "supergroup"}))
 async def handle_new_message(message: Message):
     """Handles messages in group chats: DELETE Ads first, then warn smartly."""
-    if not message.from_user or message.from_user.is_bot:
-        return
-    
     # 1. ALWAYS delete ad/links first if detected (Silent deletion)
     is_ad = await detect_and_delete_ad(bot, message)
     
+    # Early return if in mandatory hub
+    if message.chat.id == MANDATORY_CHAT_ID:
+        if is_ad:
+            await send_security_warning(message, COOLDOWN_SECONDS)
+        return
+    
+    # Anonymous Admins, Channels, & Bots (Edge Cases): Skip membership check
+    if message.sender_chat or not message.from_user or message.from_user.is_bot:
+        if is_ad:
+            await send_security_warning(message, COOLDOWN_SECONDS)
+        return
+    
+    # Bypass for SUDO_USERS and whitelisted IDs
+    if message.from_user.id in SUDO_USERS or message.from_user.id in whitelisted_users:
+        if is_ad:
+            await send_security_warning(message, COOLDOWN_SECONDS)
+        return
+
     # 2. Check if user is in mandatory hub
     is_member = await is_user_in_chat(bot, MANDATORY_CHAT_ID, message.from_user.id)
     
@@ -113,6 +128,15 @@ async def handle_chat_member_update(event: ChatMemberUpdated):
     """Handles users joining any group (except the Request Channel)."""
     # Skip the Request Channel — no membership reminder there
     if REQUEST_CHANNEL_ID and event.chat.id == REQUEST_CHANNEL_ID:
+        return
+    if event.chat.id == MANDATORY_CHAT_ID:
+        return
+    
+    # Guard against bots or missing user objects
+    if not event.from_user or event.from_user.is_bot:
+        return
+
+    if event.from_user.id in SUDO_USERS or event.from_user.id in whitelisted_users:
         return
     if event.new_chat_member.status == "member" and event.old_chat_member.status in ["left", "kicked", "restricted"]:
         await handle_join_request(bot, MANDATORY_CHAT_ID, event)

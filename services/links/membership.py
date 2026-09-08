@@ -1,20 +1,34 @@
 import time
 import logging
+from cachetools import TTLCache
 from aiogram import Bot, types
 from aiogram.types import Message, ChatMemberUpdated, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.exceptions import TelegramBadRequest, TelegramAPIError
 
 logger = logging.getLogger(__name__)
 
 # Cooldown cache: {user_id: last_notification_time}
 cooldown_cache = {}
 
+# Verified users cache to avoid hitting Telegram API repeatedly
+verified_users_cache = TTLCache(maxsize=10000, ttl=1800)
+
 async def is_user_in_chat(bot: Bot, mandatory_chat_id: int, user_id: int) -> bool:
     """Checks if a user is a member of the mandatory chat."""
+    if user_id in verified_users_cache:
+        return True
+
     try:
         member = await bot.get_chat_member(chat_id=mandatory_chat_id, user_id=user_id)
-        return member.status in ["member", "administrator", "creator"]
+        is_member = member.status not in ["left", "kicked"]
+        if is_member:
+            verified_users_cache[user_id] = True
+        return is_member
+    except (TelegramBadRequest, TelegramAPIError) as e:
+        logger.error(f"Telegram API Error checking membership for {user_id}: {e}")
+        return False
     except Exception as e:
-        logger.error(f"Error checking membership for {user_id}: {e}")
+        logger.error(f"Unexpected error checking membership for {user_id}: {e}")
         return False
 
 async def send_membership_reminder(bot: Bot, mandatory_chat_id: int, message: Message, cooldown_seconds: int) -> bool:
