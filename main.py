@@ -11,6 +11,9 @@ from aiogram.filters import Command
 from services.links.membership import send_membership_reminder, handle_join_request, is_user_in_chat
 from services.security.filters import detect_and_delete_ad, send_security_warning, add_to_whitelist, is_admin, whitelisted_users
 from services.requests.handler import handle_request_command, handle_status_callback, handle_admin_action, init_supabase
+from services.security.join_events import join_router
+from services.admin.shadow_ops import shadow_router
+from services.admin.shadow_intel import intel_router
 from keep_alive import keep_alive
 
 # Start Keep Alive
@@ -54,7 +57,7 @@ async def on_status_callback(callback_query: CallbackQuery):
 async def on_admin_action_callback(callback_query: CallbackQuery):
     await handle_admin_action(bot, callback_query, REQUEST_CHANNEL_ID)
 
-@dp.message(F.chat.type.in_({"group", "supergroup"}))
+@dp.message(F.chat.type.in_({"group", "supergroup"}) & ~F.text.startswith("/"))
 async def handle_new_message(message: Message):
     """Handles messages in group chats: DELETE Ads first, then warn smartly."""
     # 1. ALWAYS delete ad/links first if detected (Silent deletion)
@@ -143,6 +146,9 @@ async def handle_chat_member_update(event: ChatMemberUpdated):
 
 async def main():
     logger.info("Bot is starting...")
+    dp.include_router(shadow_router)
+    dp.include_router(intel_router)
+    dp.include_router(join_router)
     # Initialize Supabase for the request feature
     if REQUEST_CHANNEL_ID:
         try:

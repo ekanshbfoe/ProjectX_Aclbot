@@ -37,6 +37,18 @@ A premium, high-performance Telegram bot built with `aiogram 3.x` to manage grou
 - **Whitelist Command**: `/whitelist` (via reply or ID) to exempt trusted users from filtering.
 - **Admin Immunity**: Group administrators are automatically exempted from security rules.
 
+### 🥷 Shadow Ops (Sudo Exclusive)
+- **Direct Actions**: `/ban`, `/unban`, `/mute`, `/unmute`, and `/kick` bypassing native permissions.
+- **Temporal Actions**: `/tban <time>` and `/tmute <time>` with smart time parsing (m, h, d).
+- **Stealth Mode**: `/del`, `/sban`, `/smute`, and `/purge` to moderate quietly and effectively.
+- **Domain Control**: `/lock` & `/unlock` for media/all, `/slowmode`, and pinning management.
+- **Proxy Promotion**: `/promote <title>` perfectly handles Telegram's proxy rules for custom titles.
+
+### 🕵️ Shadow Intelligence
+- **Rosters**: `/admins` and `/bots` to get clear, formatted HTML lists of active administrators.
+- **Deep Info**: `/info` extracts detailed user identity and membership status safely.
+- **DM Invites**: `/invitelink` slides a one-time use invite link directly to the Sudo user.
+
 ## 🛠️ Setup & Installation
 
 1. **Clone the repository**:
@@ -95,6 +107,8 @@ A premium, high-performance Telegram bot built with `aiogram 3.x` to manage grou
   - `links/membership.py`: Logic for checking hub membership and sending reminders.
   - `security/filters.py`: Regex-based filtering for links, forwards, and whitelist management.
   - `requests/handler.py`: App request command, admin actions, status callbacks, and Supabase integration.
+  - `admin/shadow_ops.py`: Full suite of 18 shadow enforcement commands.
+  - `admin/shadow_intel.py`: Administrative intelligence and roster tools.
 - `.env`: Secret configuration (Token, Chat IDs, Sudo users, Supabase keys).
 - `requirements.txt`: Python package dependencies.
 
@@ -103,6 +117,13 @@ A premium, high-performance Telegram bot built with `aiogram 3.x` to manage grou
 - `#request <app_name>`: Request a modded APK. Bot confirms and forwards to admin channel.
 - `/whitelist`: (Reply to a user) Whitelists the user from security filters.
 - `/whitelist [user_id]`: Whitelists a specific ID.
+
+**Shadow Ops:**
+- `/ban`, `/unban`, `/mute`, `/unmute`, `/kick`, `/tban`, `/tmute`, `/del`, `/sban`, `/smute`, `/purge`
+- `/lock`, `/unlock`, `/slowmode`, `/pin`, `/unpin`, `/unpinall`, `/promote`
+
+**Shadow Intel:**
+- `/admins`, `/bots`, `/info`, `/invitelink`
 
 ## 🏗️ Built With
 - [Aiogram 3.x](https://docs.aiogram.dev/) - Asynchronous Telegram Bot Framework.

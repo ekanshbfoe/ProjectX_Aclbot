@@ -1,8 +1,10 @@
 import logging
 import re
 import time
+import os
 from aiogram import Bot, types
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.filters import BaseFilter
 
 logger = logging.getLogger(__name__)
 
@@ -121,3 +123,9 @@ def remove_from_whitelist(user_id: int):
 
 def get_whitelisted_users():
     return list(whitelisted_users)
+
+class IsSudo(BaseFilter):
+    """Custom aiogram 3.x filter — passes only if the sender is a SUDO_USER."""
+    async def __call__(self, message: Message) -> bool:
+        sudo_users = list(map(int, os.getenv("SUDO_USERS", "").split()))
+        return message.from_user is not None and message.from_user.id in sudo_users
