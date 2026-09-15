@@ -74,6 +74,11 @@ A premium, high-performance Telegram bot built with `aiogram 3.x` to manage grou
    SUPABASE_URL=https://your-project.supabase.co
    SUPABASE_KEY=your_service_role_key
    REQUEST_CHANNEL_ID=-100xxxxxxxxxx
+   
+   # Webhook Deployment
+   WEBHOOK_URL=https://your-app-name.onrender.com
+   WEBHOOK_SECRET=your-custom-secret-token
+   PORT=8080
    ```
 
 4. **Set up Supabase** (for the request feature):
@@ -96,6 +101,7 @@ A premium, high-performance Telegram bot built with `aiogram 3.x` to manage grou
    ```
 
 5. **Run the Bot**:
+   The bot now natively runs an `aiohttp` web server bound to `0.0.0.0:$PORT` for webhook handling, making it fully compatible with Render.
    ```bash
    python main.py
    ```

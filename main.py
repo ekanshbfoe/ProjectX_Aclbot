@@ -3,8 +3,9 @@ import logging
 import os
 from dotenv import load_dotenv
 
+from aiohttp import web
 from aiogram import Bot, Dispatcher, F
-from aiogram.types import ChatMemberUpdated, Message, CallbackQuery
+from aiogram.types import ChatMemberUpdated, Message, CallbackQuery, Update
 from aiogram.filters import Command
 
 # Import logic from services
@@ -14,10 +15,6 @@ from services.requests.handler import handle_request_command, handle_status_call
 from services.security.join_events import join_router
 from services.admin.shadow_ops import shadow_router
 from services.admin.shadow_intel import intel_router
-from keep_alive import keep_alive
-
-# Start Keep Alive
-keep_alive()
 
 # Load environment variables
 load_dotenv()
@@ -27,6 +24,10 @@ MANDATORY_CHAT_ID = int(os.getenv("MANDATORY_CHAT_ID"))
 COOLDOWN_SECONDS = int(os.getenv("COOLDOWN_SECONDS", 600))
 SUDO_USERS = list(map(int, os.getenv("SUDO_USERS", "").split()))
 REQUEST_CHANNEL_ID = int(os.getenv("REQUEST_CHANNEL_ID", 0))
+
+WEBHOOK_URL = os.getenv("WEBHOOK_URL", "")  # e.g. https://my-app.onrender.com
+WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "my-secret-token")
+PORT = int(os.getenv("PORT", 8080))
 
 # Initialize bot and dispatcher
 bot = Bot(token=BOT_TOKEN)
@@ -144,7 +145,7 @@ async def handle_chat_member_update(event: ChatMemberUpdated):
     if event.new_chat_member.status == "member" and event.old_chat_member.status in ["left", "kicked", "restricted"]:
         await handle_join_request(bot, MANDATORY_CHAT_ID, event)
 
-async def main():
+async def on_startup(app: web.Application):
     logger.info("Bot is starting...")
     dp.include_router(shadow_router)
     dp.include_router(intel_router)
@@ -158,10 +159,59 @@ async def main():
             logger.error(f"Failed to init Supabase (request feature disabled): {e}")
     else:
         logger.warning("REQUEST_CHANNEL_ID not set. Request feature disabled.")
-    await dp.start_polling(bot)
+    
+    if WEBHOOK_URL:
+        await bot.set_webhook(
+            url=f"{WEBHOOK_URL}/webhook",
+            secret_token=WEBHOOK_SECRET,
+            drop_pending_updates=True,
+            allowed_updates=dp.resolve_used_update_types()
+        )
+        logger.info(f"Webhook set to {WEBHOOK_URL}/webhook")
+
+async def on_shutdown(app: web.Application):
+    logger.info("Shutting down...")
+    if WEBHOOK_URL:
+        await bot.delete_webhook(drop_pending_updates=True)
+    await bot.session.close()
+
+async def health_handler(request: web.Request):
+    """Answers with 200 OK for health monitoring."""
+    return web.json_response({"status": "ok"})
+
+async def webhook_handler(request: web.Request):
+    """Handles incoming webhook updates natively."""
+    secret = request.headers.get("X-Telegram-Bot-Api-Secret-Token")
+    if secret != WEBHOOK_SECRET:
+        return web.Response(text="Unauthorized", status=401)
+    
+    try:
+        update_data = await request.json()
+        update = Update(**update_data)
+        
+        # Async execution so we can return 200 immediately
+        asyncio.create_task(dp.feed_update(bot, update))
+        
+    except Exception as e:
+        logger.error(f"Error handling update: {e}")
+        
+    return web.Response(text="OK", status=200)
+
+def main():
+    app = web.Application()
+    app.on_startup.append(on_startup)
+    app.on_shutdown.append(on_shutdown)
+    
+    # Routes
+    app.router.add_get("/", health_handler)
+    app.router.add_get("/health", health_handler)
+    app.router.add_post("/webhook", webhook_handler)
+    
+    # Run aiohttp server
+    web.run_app(app, host="0.0.0.0", port=PORT)
 
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        main()
     except (KeyboardInterrupt, SystemExit):
         logger.info("Bot stopped.")
