@@ -32,6 +32,13 @@ A premium, high-performance Telegram bot built with `aiogram 3.x` to manage grou
 - **Admin-Only Controls**: Only admins of the request channel can manage requests.
 - **Supabase Database**: All requests are stored in Supabase with status tracking.
 
+### 📥 High-Performance Media Downloader
+- **Multi-Platform Support**: Downloads videos and photos from TikTok, Instagram, and Pinterest.
+- **Zero-Latency Caching**: Caches Telegram `file_id`s in Supabase for instant delivery on duplicate links.
+- **Album Handling**: Automatically handles carousels and slideshows (batches up to 10 items).
+- **Clean URLs**: Strips tracking parameters from URLs to generate a clean canonical URL.
+- **Self-Hosted Cobalt**: Uses a private Cobalt API instance for fast, reliable extraction.
+
 ### 👤 Admin & Whitelist
 - **Sudo Access**: Support for owner/sudo IDs to bypass all filters.
 - **Whitelist Command**: `/whitelist` (via reply or ID) to exempt trusted users from filtering.
@@ -70,10 +77,13 @@ A premium, high-performance Telegram bot built with `aiogram 3.x` to manage grou
    COOLDOWN_SECONDS=600
    SUDO_USERS=user_id1 user_id2
 
-   # Request Feature (Supabase)
+   # Request Feature & Media Downloader (Supabase)
    SUPABASE_URL=https://your-project.supabase.co
    SUPABASE_KEY=your_service_role_key
    REQUEST_CHANNEL_ID=-100xxxxxxxxxx
+   
+   # Cobalt API (Media Downloader)
+   COBALT_API_URL=https://cobalt-api-0syi.onrender.com/
    
    # Webhook Deployment
    WEBHOOK_URL=https://your-app-name.onrender.com
@@ -98,6 +108,15 @@ A premium, high-performance Telegram bot built with `aiogram 3.x` to manage grou
    );
    CREATE INDEX idx_app_requests_user_id ON app_requests (user_id);
    CREATE INDEX idx_app_requests_status ON app_requests (status);
+
+   -- For Media Downloader caching
+   CREATE TABLE IF NOT EXISTS media_cache (
+       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+       canonical_url TEXT UNIQUE NOT NULL,
+       platform TEXT NOT NULL,
+       file_ids JSONB NOT NULL,
+       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+   );
    ```
 
 5. **Run the Bot**:
@@ -113,6 +132,7 @@ A premium, high-performance Telegram bot built with `aiogram 3.x` to manage grou
   - `links/membership.py`: Logic for checking hub membership and sending reminders.
   - `security/filters.py`: Regex-based filtering for links, forwards, and whitelist management.
   - `requests/handler.py`: App request command, admin actions, status callbacks, and Supabase integration.
+  - `downloader/`: High-performance media downloader, cache handling, and Cobalt API integration.
   - `admin/shadow_ops.py`: Full suite of 18 shadow enforcement commands.
   - `admin/shadow_intel.py`: Administrative intelligence and roster tools.
 - `.env`: Secret configuration (Token, Chat IDs, Sudo users, Supabase keys).

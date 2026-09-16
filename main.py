@@ -15,6 +15,7 @@ from services.requests.handler import handle_request_command, handle_status_call
 from services.security.join_events import join_router
 from services.admin.shadow_ops import shadow_router
 from services.admin.shadow_intel import intel_router
+from services.downloader.handler import downloader_router
 
 # Load environment variables
 load_dotenv()
@@ -150,6 +151,7 @@ async def on_startup(app: web.Application):
     dp.include_router(shadow_router)
     dp.include_router(intel_router)
     dp.include_router(join_router)
+    dp.include_router(downloader_router)
     # Initialize Supabase for the request feature
     if REQUEST_CHANNEL_ID:
         try:
