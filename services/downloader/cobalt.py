@@ -23,12 +23,19 @@ async def fetch_media_from_cobalt(url: str) -> dict | None:
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(cobalt_url, headers=headers, json=payload, timeout=30) as response:
+                try:
+                    data = await response.json()
+                except Exception:
+                    data = {}
+                
+                if data.get("status") == "error":
+                    return {"type": "error", "text": data.get("text", "")}
+                
                 if response.status != 200:
                     text = await response.text()
                     logger.error(f"Cobalt API returned {response.status}: {text}")
                     return None
                 
-                data = await response.json()
                 status = data.get("status", "")
                 
                 # Cobalt v10 response structure
